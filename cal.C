@@ -20,6 +20,10 @@ void calibration()
     TH1F *h2[5];
     TH1F *h3[5];
 
+    TF1 *f1_g[5];
+    TF1 *f2_g[5];
+    TF1 *f3_g[5];
+
     vector<double> means_1 = {};
     vector<double> means_2 = {};
     vector<double> means_3 = {};
@@ -39,9 +43,9 @@ void calibration()
 
         string P1_hex, P2_hex, P3_hex;
 
-        h1[i] = new TH1F(Form("h1_%d", i), "", 1000, 0, 4096);
-        h2[i] = new TH1F(Form("h2_%d", i), "", 1000, 0, 4096);
-        h3[i] = new TH1F(Form("h3_%d", i), "", 1000, 0, 4096);
+        h1[i] = new TH1F(Form("h1_%d", i), "", 4096, 0, 4096);
+        h2[i] = new TH1F(Form("h2_%d", i), "", 4096, 0, 4096);
+        h3[i] = new TH1F(Form("h3_%d", i), "", 4096, 0, 4096);
 
         while (file >> event >> time >> P1_hex >> P2_hex >> P3_hex)
         {
@@ -54,14 +58,31 @@ void calibration()
             h3[i]->Fill(P3);
         }
 
-        means_1.push_back(h1[i]->GetMean());
+        f1_g[i] = new TF1("f1_g%d", "gaus", 0, 15000);
+        f2_g[i] = new TF1("f2_g%d", "gaus", 0, 15000);
+        f3_g[i] = new TF1("f3_g%d", "gaus", 0, 15000);
+
+        h1[i]->Fit(f1_g[i], "R");
+        h2[i]->Fit(f2_g[i], "R");
+        h3[i]->Fit(f3_g[i], "R");
+
+        means_1.push_back(f1_g[i]->GetParameter(1));
+        std_1.push_back(f1_g[i]->GetParameter(2));
+
+        means_2.push_back(f2_g[i]->GetParameter(1));
+        std_2.push_back(f2_g[i]->GetParameter(2));
+
+        means_3.push_back(f3_g[i]->GetParameter(1));
+        std_3.push_back(f3_g[i]->GetParameter(2));
+
+        /* means_1.push_back(h1[i]->GetMean());
         std_1.push_back(h1[i]->GetRMS());
 
         means_2.push_back(h2[i]->GetMean());
         std_2.push_back(h2[i]->GetRMS());
 
         means_3.push_back(h3[i]->GetMean());
-        std_3.push_back(h3[i]->GetRMS());
+        std_3.push_back(h3[i]->GetRMS());*/
     }
 
     TCanvas *c1 = new TCanvas();
@@ -71,8 +92,8 @@ void calibration()
     g1->SetTitle("P1-Calibration");
     g1->GetXaxis()->SetTitle("Oscilloscope (ns)");
     g1->GetYaxis()->SetTitle("FPGA (TDC counts)");
-    g1->SetMarkerStyle(27);
-    g1->SetMarkerSize(1.0);
+    g1->SetMarkerStyle(33);
+    g1->SetMarkerSize(1.3);
     g1->SetMarkerColor(kBlue + 2);
     f1->SetLineColor(kBlue);
     g1->Draw();
@@ -82,12 +103,12 @@ void calibration()
     legend_p1->SetTextAlign(12);
     legend_p1->SetTextSize(0.035);
     legend_p1->SetBorderSize(1);
-    legend_p1->AddText(Form("a = (%.2f #pm %.2f) #frac{1}{ns}", f1->GetParameter(1), f1->GetParError(1)));
-    legend_p1->AddText(Form("b = %.2f #pm %.2f", f1->GetParameter(0), f1->GetParError(0)));
+    legend_p1->AddText(Form("a = (%.2f \xB1 %.2f) #frac{1}{ns}", f1->GetParameter(1), f1->GetParError(1)));
+    legend_p1->AddText(Form("b = %.2f \xB1 %.2f", f1->GetParameter(0), f1->GetParError(0)));
     legend_p1->AddText(Form("#chi^{2}/NDF = %.2f", f1->GetChisquare() / f1->GetNDF()));
     legend_p1->Draw();
     c1->Print("P1.pdf");
-
+    c1->Print("P1.png");
 
     TCanvas *c2 = new TCanvas();
     c2->SetGrid();
@@ -96,8 +117,8 @@ void calibration()
     g2->SetTitle("P2-Calibration");
     g2->GetXaxis()->SetTitle("Oscilloscope (ns)");
     g2->GetYaxis()->SetTitle("FPGA (TDC counts)");
-    g2->SetMarkerStyle(27);
-    g2->SetMarkerSize(1.0);
+    g2->SetMarkerStyle(33);
+    g2->SetMarkerSize(1.3);
     g2->SetMarkerColor(kGreen + 2);
     f2->SetLineColor(kGreen);
     g2->Draw();
@@ -107,12 +128,12 @@ void calibration()
     legend_p2->SetTextAlign(12);
     legend_p2->SetTextSize(0.035);
     legend_p2->SetBorderSize(1);
-    legend_p2->AddText(Form("a = (%.2f #pm %.2f) #frac{1}{ns}", f2->GetParameter(1), f2->GetParError(1)));
-    legend_p2->AddText(Form("b = %.2f #pm %.2f", f2->GetParameter(0), f2->GetParError(0)));
+    legend_p2->AddText(Form("a = (%.2f \xB1 %.2f) #frac{1}{ns}", f2->GetParameter(1), f2->GetParError(1)));
+    legend_p2->AddText(Form("b = %.2f \xB1 %.2f", f2->GetParameter(0), f2->GetParError(0)));
     legend_p2->AddText(Form("#chi^{2}/NDF = %.2f", f2->GetChisquare() / f2->GetNDF()));
     legend_p2->Draw();
     c2->Print("P2.pdf");
-
+    c2->Print("P2.png");
 
     TCanvas *c3 = new TCanvas();
     c3->SetGrid();
@@ -121,8 +142,8 @@ void calibration()
     g3->SetTitle("P3-Calibration");
     g3->GetXaxis()->SetTitle("Oscilloscope (ns)");
     g3->GetYaxis()->SetTitle("FPGA (TDC counts)");
-    g3->SetMarkerStyle(27);
-    g3->SetMarkerSize(1.0);
+    g3->SetMarkerStyle(33);
+    g3->SetMarkerSize(1.3);
     g3->SetMarkerColor(kRed + 2);
     f3->SetLineColor(kRed);
     g3->Draw();
@@ -132,10 +153,11 @@ void calibration()
     legend_p3->SetTextAlign(12);
     legend_p3->SetTextSize(0.035);
     legend_p3->SetBorderSize(1);
-    legend_p3->AddText(Form("a = (%.2f #pm %.2f) #frac{1}{ns}", f3->GetParameter(1), f3->GetParError(1)));
-    legend_p3->AddText(Form("b = %.2f #pm %.2f", f3->GetParameter(0), f3->GetParError(0)));
+    legend_p3->AddText(Form("a = (%.2f \xB1 %.2f) #frac{1}{ns}", f3->GetParameter(1), f3->GetParError(1)));
+    legend_p3->AddText(Form("b = %.2f \xB1 %.2f", f3->GetParameter(0), f3->GetParError(0)));
     legend_p3->AddText(Form("#chi^{2}/NDF = %.2f", f3->GetChisquare() / f3->GetNDF()));
     legend_p3->Draw();
 
     c3->Print("P3.pdf");
+    c3->Print("P3.png");
 }
